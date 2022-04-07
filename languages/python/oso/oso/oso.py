@@ -245,7 +245,7 @@ class Oso(Polar):
         else:
             return self.old_authorized_query(actor, action, resource_cls)
 
-    def authorized_resources(self, actor, action, resource_cls) -> List[Any]:
+    async def authorized_resources(self, actor, action, resource_cls) -> List[Any]:
         """Determine the resources of type ``resource_cls`` that ``actor``
         is allowed to perform ``action`` on.
 
@@ -258,7 +258,7 @@ class Oso(Polar):
         query = self.authorized_query(actor, action, resource_cls)
 
         if self.is_new_data_filtering_configured():
-            return self.host.adapter.execute_query(query)
+            return await self.host.adapter.execute_query(query)
         elif query is None:
             return []
         else:
