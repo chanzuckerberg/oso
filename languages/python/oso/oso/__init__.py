@@ -7,5 +7,6 @@ from polar import (
     DataFilter,
 )
 from .oso import Oso
+from .async_oso import AsyncOso
 from .exceptions import AuthorizationError, ForbiddenError, NotFoundError
 from polar.exceptions import OsoError
