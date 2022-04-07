@@ -1,28 +1,24 @@
 """Communicate with the Polar virtual machine: load rules, make queries, etc."""
 
-from datetime import datetime, timedelta
 import os
-from pathlib import Path
 import sys
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, List, Union
 
-from .exceptions import (
-    PolarRuntimeError,
-    InlineQueryFailedError,
-    ParserError,
-    PolarFileExtensionError,
-    PolarFileNotFoundError,
-    InvalidQueryTypeError,
-)
-from .ffi import Polar as FfiPolar, PolarSource as Source
+from .async_query import AsyncQuery
+from .data import DataFilter
+from .data_filtering import filter_data, serialize_types
+from .exceptions import (InlineQueryFailedError, InvalidQueryTypeError,
+                         ParserError, PolarFileExtensionError,
+                         PolarFileNotFoundError, PolarRuntimeError)
+from .expression import Expression, Pattern
+from .ffi import Polar as FfiPolar
+from .ffi import PolarSource as Source
 from .host import Host
 from .polar import Polar
-from .async_query import AsyncQuery
 from .predicate import Predicate
 from .variable import Variable
-from .expression import Expression, Pattern
-from .data_filtering import serialize_types, filter_data
-from .data import DataFilter
 
 CLASSES: Dict[str, type] = {}
 
@@ -88,7 +84,6 @@ class AsyncPolar(Polar):
             for k, v in result["bindings"].items()
         ]
 
-
     async def check_inline_queries(self):
         while True:
             query = self.ffi_polar.next_inline_query()
@@ -111,7 +106,6 @@ class AsyncPolar(Polar):
         """
         return self.query(Predicate(name=name, args=args), **kwargs)
 
-
     async def query(self, query, *, bindings=None, accept_expression=False):
         """Query for a predicate, parsing it if necessary.
 
@@ -131,7 +125,4 @@ class AsyncPolar(Polar):
 
         q = AsyncQuery(query, host=host, bindings=bindings).run()
         async for res in q:
-            print("xxxxxxx")
-            print(res)
-            print("/xxxxxxx")
             yield res
