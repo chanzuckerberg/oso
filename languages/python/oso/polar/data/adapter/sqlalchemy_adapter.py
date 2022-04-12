@@ -1,8 +1,11 @@
 from functools import reduce
+
+import sqlalchemy as sa
 from sqlalchemy.inspection import inspect
 from sqlalchemy.sql import false, true
-from .adapter import DataAdapter
+
 from ..filter import Projection
+from .adapter import DataAdapter
 
 
 class SqlAlchemyAdapter(DataAdapter):
@@ -21,7 +24,7 @@ class SqlAlchemyAdapter(DataAdapter):
                 right, getattr(left, rec.my_field) == getattr(right, rec.other_field)
             )
 
-        query = reduce(re, filter.relations, self.session.query(filter.model))
+        query = reduce(re, filter.relations, sa.select(filter.model))
         disj = reduce(
             lambda a, b: a | b,
             [
@@ -34,10 +37,18 @@ class SqlAlchemyAdapter(DataAdapter):
             ],
             false(),
         )
-        return query.filter(disj).distinct()
+        # NOTE - we're using postgresql's specific DISTINCT ON for the model's
+        # primary key columns here because postgresql supports several different
+        # unhashable column data types (ex: json/jsonb) that explode when
+        # included by a traditional DISTINCT clause.
+        return query.filter(disj).distinct(*self.get_primary_key(filter.model))
+
+    def get_primary_key(self, model_instance):
+        model_columns = model_instance.__mapper__.columns
+        return [c for c in model_columns if c.primary_key]
 
     def execute_query(self, query):
-        return query.all()
+        return self.session.execute(query).scalars().all()
 
     def sqlize(cond):
         op = cond.cmp
